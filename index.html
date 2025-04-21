@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Учебник SQL и Python для Аналитика</title>
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { margin: 0; background-color: #f5f5f5; }
+    header { background-color: #1e88e5; color: white; padding: 1rem; text-align: center; }
+    nav { display: flex; background-color: #1565c0; }
+    nav button { flex: 1; background: none; border: none; color: white; padding: 1rem; cursor: pointer; }
+    nav button.active, nav button:hover { background-color: #0d47a1; }
+    .content { padding: 2rem; display: none; }
+    .content.active { display: block; }
+    h2 { color: #1e88e5; margin-top: 0; }
+    h3 { color: #1565c0; margin-bottom: 0.5rem; }
+    p, li { line-height: 1.4; }
+    pre { background: #eeeeee; padding: 1rem; overflow-x: auto; }
+    ul { margin: 0.5rem 0 1rem 1rem; }
+    code.inline { background: #e0e0e0; padding: 2px 4px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Полный справочник SQL и Python</h1>
+  </header>
+  <nav>
+    <button class="tab-btn active" onclick="showTab('sql')">SQL</button>
+    <button class="tab-btn" onclick="showTab('python')">Python</button>
+  </nav>
+
+  <!-- SQL -->
+  <div id="sql" class="content active">
+    <h2>SQL — полный список тем</h2>
+
+    <h3>1. SELECT / FROM / WHERE / DISTINCT / LIMIT</h3>
+    <p><strong>SELECT</strong> выбирает столбцы из таблицы, <strong>FROM</strong> указывает источник данных, <strong>WHERE</strong> фильтрует строки по условию.</p>
+    <p><strong>DISTINCT</strong> убирает дубликаты в результатах (отличается от обычного SELECT тем, что строки с одинаковыми значениями объединяются в одну).</p>
+    <p><strong>LIMIT</strong> ограничивает число возвращаемых строк, полезно для предварительного просмотра или пагинации.</p>
+    <pre>SELECT DISTINCT col1, col2
+FROM table
+WHERE condition
+ORDER BY col1 DESC
+LIMIT 10;</pre>
+
+    <h3>2. GROUP BY / HAVING / Агрегатные функции</h3>
+    <p><strong>GROUP BY</strong> объединяет строки по указанным столбцам, после чего применяются агрегатные функции.</p>
+    <p><strong>HAVING</strong> фильтрует уже сгруппированные данные, отличается от WHERE тем, что WHERE не может работать с агрегатами.</p>
+    <p>Агрегатные функции (<code class="inline">COUNT</code>, <code class="inline">SUM</code>, <code class="inline">AVG</code>, <code class="inline">MIN</code>, <code class="inline">MAX</code>) вычисляют показатели по группам.</p>
+    <pre>SELECT col, COUNT(*) AS cnt, SUM(amount) AS total
+FROM table
+WHERE flags = 'Y'
+GROUP BY col
+HAVING COUNT(*) > 1;</pre>
+
+    <h3>3. JOIN (INNER, LEFT, RIGHT, FULL)</h3>
+    <p><strong>JOINS</strong> объединяют данные из нескольких таблиц по ключевому условию. Отличаются количеством строк, которые попадают в результат:</p>
+    <ul>
+      <li><strong>INNER JOIN</strong>: только совпадающие строки обеих таблиц.</li>
+      <li><strong>LEFT JOIN</strong>: все строки из левой таблицы и совпадения из правой (остальные правые NULL).</li>
+      <li><strong>RIGHT JOIN</strong>: все строки из правой таблицы и совпадения из левой (остальные левые NULL).</li>
+      <li><strong>FULL JOIN</strong>: все строки обеих таблиц, где нет совпадения — NULL.</li>
+    </ul>
+    <pre>-- INNER JOIN
+SELECT * FROM A INNER JOIN B ON A.id = B.a_id;
+-- LEFT JOIN
+SELECT * FROM A LEFT JOIN B ON A.id = B.a_id;
+-- RIGHT JOIN
+SELECT * FROM A RIGHT JOIN B ON A.id = B.a_id;
+-- FULL JOIN
+SELECT * FROM A FULL JOIN B ON A.id = B.a_id;</pre>
+
+    <h3>4. Подзапросы и CTE (WITH)</h3>
+    <p><strong>Подзапрос</strong> — запрос внутри другого, может находиться в SELECT, FROM или WHERE. Позволяет логически разделить сложный запрос.</p>
+    <p><strong>CTE</strong> (<code class="inline">WITH</code>) создаёт временный результирующий набор, упрощает чтение и повторное использование подзапросов.</p>
+    <pre>-- Подзапрос в WHERE
+SELECT name FROM users WHERE id IN (
+  SELECT user_id FROM orders WHERE total > 100
+);
+-- CTE
+WITH high_orders AS (
+  SELECT user_id, SUM(total) AS sum_total
+  FROM orders GROUP BY user_id
+)
+SELECT u.name, h.sum_total
+FROM users u
+JOIN high_orders h ON u.id = h.user_id;</pre>
+
+    <h3>5. Оконные функции (Window functions)</h3>
+    <p><strong>Оконные функции</strong> выполняют вычисления по набору строк, «окну» вокруг текущей строки, сохраняя при этом исходное число строк.</p>
+    <p>Отличие от агрегатных функций: не уменьшают число строк, а расширяют данные дополнительными вычислениями.</p>
+    <pre>SELECT
+  user_id,
+  order_date,
+  SUM(amount) OVER (PARTITION BY user_id ORDER BY order_date) AS running_total,
+  ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY order_date) AS rn
+FROM orders;</pre>
+
+    <h3>6. Set-операции: UNION / UNION ALL / INTERSECT / EXCEPT</h3>
+    <p>Операции над множествами результатов нескольких SELECT:</p>
+    <ul>
+      <li><strong>UNION</strong>: объединяет и убирает дубликаты.</li>
+      <li><strong>UNION ALL</strong>: объединяет без удаления дубликатов.</li>
+      <li><strong>INTERSECT</strong>: общие строки между запросами.</li>
+      <li><strong>EXCEPT</strong>: строки из первого, отсутствующие во втором.</li>
+    </ul>
+    <pre>SELECT col FROM A
+UNION ALL
+SELECT col FROM B;
+-- INTERSECT, EXCEPT аналогично</pre>
+
+    <h3>7. CASE WHEN</h3>
+    <p><strong>CASE</strong> позволяет писать условные выражения внутри SELECT, создавая новые вычисляемые столбцы.</p>
+    <p>Отличается от простых функций тем, что позволяет задавать несколько условий последовательно.</p>
+    <pre>SELECT
+  id,
+  CASE
+    WHEN score >= 90 THEN 'A'
+    WHEN score >= 75 THEN 'B'
+    ELSE 'C'
+  END AS grade
+FROM exams;</pre>
+
+    <h3>8. NULL / COALESCE()</h3>
+    <p><strong>NULL</strong> означает отсутствие значения. Проверяется через <code class="inline">IS NULL</code>.</p>
+    <p><strong>COALESCE</strong> заменяет NULL на заданное значение; отличается от ISNULL, т.к. работает в стандарте SQL и поддерживает несколько аргументов.</p>
+    <pre>SELECT COALESCE(phone, 'N/A') FROM contacts;
+SELECT * FROM contacts WHERE email IS NULL;</pre>
+
+    <h3>9. Строковые и датовские функции</h3>
+    <p>Строковые функции (CONCAT, SUBSTR) позволяют объединять и извлекать части текста.</p>
+    <p>Дата-функции (CURRENT_DATE, DATE_TRUNC) работают с типами DATE/TIMESTAMP, позволяют округлять и сравнивать даты.</p>
+    <pre>-- Строки
+SELECT CONCAT(first_name, ' ', last_name), SUBSTR(text,1,10)
+FROM table;
+-- Даты
+SELECT CURRENT_DATE, DATE_TRUNC('month', order_date)
+FROM orders;</pre>
+
+    <h3>10. Обновление и удаление (UPDATE / DELETE / MERGE)</h3>
+    <p><strong>UPDATE</strong> меняет существующие строки, <strong>DELETE</strong> удаляет их.</p>
+    <p><strong>MERGE</strong> (в некоторых СУБД) объединяет INSERT/UPDATE/DELETE по условию.</p>
+    <pre>UPDATE products SET price = price * 1.05 WHERE category = 'X';
+DELETE FROM logs WHERE event_time < '2025-01-01';
+-- MERGE в некоторых СУБД</pre>
+
+    <h3>11. Транзакции и уровни изоляции</h3>
+    <p><strong>Транзакции</strong> объединяют несколько операций в единый логический блок (<code class="inline">BEGIN...COMMIT</code>).</p>
+    <p>Уровни изоляции (READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE) контролируют видимость изменений между транзакциями и обеспечивают целостность.</p>
+    <pre>BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+COMMIT;</pre>
+
+    <h3>12. Индексы и EXPLAIN</h3>
+    <p><strong>Индексы</strong> ускоряют поиск по столбцам, но замедляют INSERT/UPDATE/DELETE.</p>
+    <p><strong>EXPLAIN ANALYZE</strong> показывает план выполнения запроса и время, помогает оптимизировать.</p>
+    <pre>CREATE INDEX idx_name ON table(col);
+EXPLAIN ANALYZE SELECT * FROM table WHERE col = 'X';</pre>
+
+    <h3>13. Ограничения: PRIMARY KEY, FOREIGN KEY, UNIQUE, CHECK</h3>
+    <p>Ограничения обеспечивают целостность данных: уникальность, связь между таблицами, проверка значений.</p>
+    <pre>CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(100) UNIQUE,
+  age INT CHECK (age >= 0),
+  dept_id INT REFERENCES departments(id)
+);</pre>
+
+    <h3>14. Представления (VIEW) и триггеры</h3>
+    <p><strong>VIEW</strong> — виртуальная таблица, сохраняет запрос для повторного использования.</p>
+    <p><strong>TRIGGER</strong> — процедура, автоматически выполняемая при INSERT/UPDATE/DELETE для аудита или контроля.</p>
+    <pre>CREATE VIEW active_users AS SELECT * FROM users WHERE active = true;
+
+CREATE TRIGGER trg_log AFTER INSERT ON orders
+FOR EACH ROW EXECUTE FUNCTION log_order();</pre>
+
+    <h3>15. Нормализация данных</h3>
+    <p>Приведение структуры таблиц к нормальным формам (1NF, 2NF, 3NF) для устранения избыточности и аномалий при обновлении.</p>
+
+    <h3>Вопросы к экзамену по SQL</h3>
+    <ul>
+      <li>Назовите SQL-операторы для объединения множеств и объясните разницу.</li>
+      <li>Что такое оконная функция, как отличается от агрегатной?</li>
+      <li>Для чего нужен CTE, чем отличается от подзапроса?</li>
+      <li>Перечислите уровни изоляции транзакций и их особенности.</li>
+      <li>Как индекс влияет на скорость чтения и записи?</li>
+      <li>В чем отличие VIEW и MATERIALIZED VIEW?</li>
+    </ul>
+  </div>
+
+  <!-- Python -->
+  <div id="python" class="content">
+    <h2>Python — полный список тем</h2>
+
+    <h3>1. Синтаксис и структуры данных</h3>
+    <p>Python поддерживает базовые типы (<code class="inline">int</code>, <code class="inline">float</code>, <code class="inline">str</code>, <code class="inline">bool</code>) и коллекции:</p>
+    <ul>
+      <li><strong>list</strong> — изменяемый упорядоченный набор;</li>
+      <li><strong>tuple</strong> — неизменяемая упорядоченная коллекция;</li>
+      <li><strong>dict</strong> — набор пар ключ-значение;</li>
+      <li><strong>set</strong> — неупорядоченное множество уникальных элементов.</li>
+    </ul>
+    <p>Comprehensions позволяют компактно создавать списки и словари, отличаются от циклов тем, что пишутся в одну строку.</p>
+    <pre>nums = [x for x in range(10) if x % 2 == 0]
+<|diff_marker|>***
+<|diff_marker|> missing closing ticks
